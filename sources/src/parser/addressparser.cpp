@@ -20,7 +20,8 @@ namespace citygml {
 
         auto k_rootElements = std::unordered_set<NodeType::XMLNode>();
         auto k_subElements = std::unordered_set<NodeType::XMLNode>();
-        auto k_dataElements = std::unordered_map<NodeType::XMLNode, std::function<void(Address*, const std::string&)>>();
+        using DataElementMap = std::unordered_map<NodeType::XMLNode, std::function<void(Address*, const std::string&)>>;
+        auto k_dataElements = DataElementMap();
 
         std::mutex g_nodeSetMutex;
         bool g_nodeSetsInitialized = false;
@@ -43,12 +44,12 @@ namespace citygml {
                         NodeType::XAL_ThoroughfareNode
                     };
 
-                    k_dataElements = {
-                        { NodeType::XAL_CountryNameNode, &Address::setCountry },
-                        { NodeType::XAL_LocalityNameNode, &Address::setLocality },
-                        { NodeType::XAL_ThoroughfareNameNode, &Address::setThoroughfareName },
-                        { NodeType::XAL_ThoroughfareNumberNode, &Address::setThoroughfareNumber },
-                        { NodeType::XAL_PostalCodeNumberNode, &Address::setPostalCode }
+                    k_dataElements = DataElementMap {
+                        { NodeType::XAL_CountryNameNode, std::mem_fn(&Address::setCountry) },
+                        { NodeType::XAL_LocalityNameNode, std::mem_fn(&Address::setLocality) },
+                        { NodeType::XAL_ThoroughfareNameNode, std::mem_fn(&Address::setThoroughfareName) },
+                        { NodeType::XAL_ThoroughfareNumberNode, std::mem_fn(&Address::setThoroughfareNumber) },
+                        { NodeType::XAL_PostalCodeNumberNode, std::mem_fn(&Address::setPostalCode) }
                     };
 
                     g_nodeSetsInitialized = true;
@@ -82,7 +83,7 @@ namespace citygml {
             throw std::runtime_error("Unexpected start tag found.");
         }
 
-        m_address = make_unique<Address>(attributes.getCityGMLIDAttribute());
+        m_address = citygml::make_unique<Address>(attributes.getCityGMLIDAttribute());
         return true;
     }
 
